@@ -18,7 +18,7 @@ if "api_key" not in st.session_state:
     else:
         st.session_state.api_key = ""
 
-st.title("대서울고 전용 ChatGPT")
+st.title("서울 선생님들 테스트용 ChatGPT")
 
 st.markdown(
     f"""API KEY
