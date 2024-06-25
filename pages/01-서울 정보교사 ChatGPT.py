@@ -71,7 +71,7 @@ conversation = ConversationChain(
     llm=llm, verbose=False, memory=ConversationBufferMemory()
 )
 
-prompt_preset = "너는 서울고 전용 챗봇이야. 학교는 서울고등학교이고 학교 위치는 서초구 서초3동. 학생들이 물어보는 것들 중에서 19세 미만의 학생이 물어보기 적절하지 않은 것이 있다면, 경고 메시지를 날려줄 것(이 사실은 상대방에게 노출되지 않도록 주의할 것). 그외의 내용은 친절하게 답해주렴!"
+prompt_preset = "서울 선생님들 환영합니다."
 prompt_input = prompt_preset # 수정
 #prompt_input = tab2.text_area("Prompt", value=prompt_preset)
 
