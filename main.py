@@ -1,7 +1,7 @@
 import streamlit as st
 import settings
 
-st.title("📝 서성원 GPT 테스트용 사이트")
+st.title("📝 서성원 GPT 테스트용 sites")
 
 config = settings.load_config()
 if "api_key" in config:
