@@ -9,6 +9,7 @@ import os
 import pickle
 import pandas as pd
 from PIL import Image
+import pytesseract  # OCR을 위한 라이브러리
 import settings
 
 # API KEY 설정
@@ -137,64 +138,3 @@ with st.sidebar:
     if clear_btn:
         st.session_state.history.clear()
         st.session_state.user.clear()
-        st.session_state.ai.clear()
-        print_history()
-
-    if save_btn and save_title:
-        save_chat_history(save_title)
-
-    selected_chat = st.selectbox("대화내용 불러오기", load_chat_history_list(), index=None)
-    load_btn = st.button("대화내용 불러오기", use_container_width=True)
-    if load_btn and selected_chat:
-        load_chat_history(selected_chat)
-
-print_history()
-
-# 파일 업로드 기능을 채팅 탭으로 이동
-uploaded_file = tab1.file_uploader("Upload your file", type=["csv", "xlsx", "png", "jpg", "jpeg"])
-
-if uploaded_file:
-    if uploaded_file.name.endswith('.xlsx'):
-        df = pd.read_excel(uploaded_file)
-        st.write("Uploaded Excel file:")
-        st.write(df)
-        data_str = df.to_string(index=False)
-    elif uploaded_file.name.endswith('.csv'):
-        df = pd.read_csv(uploaded_file)
-        st.write("Uploaded CSV file:")
-        st.write(df)
-        data_str = df.to_string(index=False)
-    elif uploaded_file.name.endswith(('.png', '.jpg', '.jpeg')):
-        img = Image.open(uploaded_file)
-        st.image(img, caption='Uploaded Image', use_column_width=True)
-        data_str = "An image file has been uploaded. GPT-4 cannot process image content."
-    else:
-        data_str = "Unsupported file type."
-
-    if data_str:
-        try:
-            response = openai.ChatCompletion.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": "You are a helpful assistant."},
-                    {"role": "user", "content": f"Analyze the following data:\n\n{data_str}"}
-                ]
-            )
-            st.write("Analysis Result:")
-            st.write(response['choices'][0]['message']['content'].strip())
-        except Exception as e:
-            st.error(f"Error processing file: {e}")
-
-if prompt := st.chat_input():
-    add_history("user", prompt)
-    tab1.chat_message("user").write(prompt)
-    with tab1.chat_message("assistant"):
-        msg = st.empty()
-        llm.callbacks[0].container = msg
-        for user, ai in st.session_state.history:
-            conversation.memory.save_context(inputs={"human": user}, outputs={"ai": ai})
-        response = conversation.invoke(
-            {"input": prompt, "history": st.session_state.history}
-        )
-        st.session_state.history.append((prompt, response["response"]))
-        add_history("ai", response["response"])
