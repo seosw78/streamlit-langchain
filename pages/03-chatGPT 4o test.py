@@ -69,15 +69,13 @@ if uploaded_file:
 
     if data_str:
         try:
-            response = openai.ChatCompletion.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": "You are a helpful assistant."},
-                    {"role": "user", "content": f"Analyze the following data:\n\n{data_str}"}
-                ]
+            response = openai.Completion.create(
+                model="text-davinci-003",
+                prompt=f"Analyze the following data:\n\n{data_str}",
+                max_tokens=150
             )
             st.write("Analysis Result:")
-            st.write(response['choices'][0]['message']['content'].strip())
+            st.write(response.choices[0].text.strip())
         except Exception as e:
             st.error(f"Error processing file: {e}")
 
@@ -86,16 +84,14 @@ if prompt := st.chat_input():
     tab1.chat_message("user").write(prompt)
     with tab1.chat_message("assistant"):
         msg = st.empty()
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": prompt}
-            ]
+        response = openai.Completion.create(
+            model="text-davinci-003",
+            prompt=prompt,
+            max_tokens=150
         )
-        st.session_state.history.append((prompt, response['choices'][0]['message']['content']))
-        add_history("ai", response['choices'][0]['message']['content'])
-        msg.markdown(response['choices'][0]['message']['content'])
+        st.session_state.history.append((prompt, response.choices[0].text.strip()))
+        add_history("ai", response.choices[0].text.strip())
+        msg.markdown(response.choices[0].text.strip())
 
 def print_history():
     for i in range(len(st.session_state.ai)):
