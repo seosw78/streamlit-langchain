@@ -173,13 +173,15 @@ if uploaded_file:
 
     if data_str:
         try:
-            response = openai.Completion.create(
-                engine="text-davinci-004",
-                prompt=f"Analyze the following data:\n\n{data_str}",
-                max_tokens=150
+            response = openai.ChatCompletion.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "You are a helpful assistant."},
+                    {"role": "user", "content": f"Analyze the following data:\n\n{data_str}"}
+                ]
             )
             st.write("Analysis Result:")
-            st.write(response.choices[0].text.strip())
+            st.write(response['choices'][0]['message']['content'].strip())
         except Exception as e:
             st.error(f"Error processing file: {e}")
 
