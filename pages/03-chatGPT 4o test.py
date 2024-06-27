@@ -168,11 +168,14 @@ if uploaded_file:
         data_str = "Unsupported file type."
 
     if data_str:
-        response = llm.generate(
-            prompt=f"Analyze the following data:\n\n{data_str}"
-        )
-        st.write("Analysis Result:")
-        st.write(response.choices[0].text.strip())
+        try:
+            response = llm.completion(
+                prompt=f"Analyze the following data:\n\n{data_str}"
+            )
+            st.write("Analysis Result:")
+            st.write(response.choices[0].text.strip())
+        except Exception as e:
+            st.error(f"Error processing file: {e}")
 
 if prompt := st.chat_input():
     add_history("user", prompt)
