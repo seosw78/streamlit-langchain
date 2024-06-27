@@ -150,7 +150,8 @@ with st.sidebar:
 
 print_history()
 
-uploaded_file = tab2.file_uploader("Upload your file", type=["csv", "xlsx", "png", "jpg", "jpeg"])
+# 파일 업로드 기능을 채팅 탭으로 이동
+uploaded_file = tab1.file_uploader("Upload your file", type=["csv", "xlsx", "png", "jpg", "jpeg"])
 
 if uploaded_file:
     if uploaded_file.name.endswith('.xlsx'):
