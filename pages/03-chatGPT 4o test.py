@@ -1,16 +1,11 @@
 import streamlit as st
 import openai
-from langchain_openai import ChatOpenAI
-from langchain.prompts import PromptTemplate
-from langchain.memory import ConversationBufferMemory
-from langchain.chains import ConversationChain
-from langchain.callbacks.base import BaseCallbackHandler
-import os
-import pickle
 import pandas as pd
 from PIL import Image
 import pytesseract  # OCR을 위한 라이브러리
 import settings
+import os
+import pickle
 
 # API KEY 설정
 if "api_key" not in st.session_state:
@@ -48,62 +43,59 @@ def add_history(role, content):
 model_name = st.empty()
 tab1, tab2 = st.tabs(["Chat", "Settings"])
 
-class StreamCallback(BaseCallbackHandler):
-    def __init__(self, container):
-        self.container = container
-        self.full_text = ""
+# 파일 업로드 기능을 채팅 탭으로 이동
+uploaded_file = tab1.file_uploader("Upload your file", type=["csv", "xlsx", "png", "jpg", "jpeg"])
 
-    def on_llm_new_token(self, token: str, **kwargs) -> None:
-        self.full_text += token
-        self.container.markdown(self.full_text)
+if uploaded_file:
+    data_str = ""
+    if uploaded_file.name.endswith('.xlsx'):
+        df = pd.read_excel(uploaded_file)
+        st.write("Uploaded Excel file:")
+        st.write(df)
+        data_str = df.to_string(index=False)
+    elif uploaded_file.name.endswith('.csv'):
+        df = pd.read_csv(uploaded_file)
+        st.write("Uploaded CSV file:")
+        st.write(df)
+        data_str = df.to_string(index=False)
+    elif uploaded_file.name.endswith(('.png', '.jpg', '.jpeg')):
+        img = Image.open(uploaded_file)
+        st.image(img, caption='Uploaded Image', use_column_width=True)
+        data_str = pytesseract.image_to_string(img)
+        if not data_str.strip():
+            data_str = "OCR could not extract text from the image."
+    else:
+        data_str = "Unsupported file type."
 
-# ChatOpenAI 객체 생성
-try:
-    llm = ChatOpenAI(
-        model="gpt-4",
-        streaming=True,
-        callbacks=[StreamCallback(st.empty())],
-        api_key=st.session_state.api_key,
-    )
-except Exception as e:
-    st.error(f"Error initializing ChatOpenAI: {e}")
+    if data_str:
+        try:
+            response = openai.ChatCompletion.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "You are a helpful assistant."},
+                    {"role": "user", "content": f"Analyze the following data:\n\n{data_str}"}
+                ]
+            )
+            st.write("Analysis Result:")
+            st.write(response['choices'][0]['message']['content'].strip())
+        except Exception as e:
+            st.error(f"Error processing file: {e}")
 
-# ConversationChain 객체 생성
-conversation = ConversationChain(
-    llm=llm, verbose=False, memory=ConversationBufferMemory()
-)
-
-prompt_preset = "서울 선생님들 환영합니다."
-prompt_input = prompt_preset
-
-def create_prompt_template(prompt_input):
-    prompt_template = PromptTemplate.from_template(
-        """
-{custom_prompt}
-
-HISTORY:
-{history}
-
-QUESTION:
-{input}
-
-ANSWER:
-
-"""
-    )
-    prompt_template = prompt_template.partial(custom_prompt=prompt_input)
-    return prompt_template
-
-if prompt_input:
-    prompt_template = create_prompt_template(prompt_input)
-    conversation.prompt = prompt_template
-
-model_input = tab2.selectbox("Model", ["gpt-3.5-turbo", "gpt-4"], index=1)
-
-if model_input:
-    settings.save_config({"model": model_input})
-    llm.model_name = model_input
-    model_name.markdown(f"#### {model_input}")
+if prompt := st.chat_input():
+    add_history("user", prompt)
+    tab1.chat_message("user").write(prompt)
+    with tab1.chat_message("assistant"):
+        msg = st.empty()
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": prompt}
+            ]
+        )
+        st.session_state.history.append((prompt, response['choices'][0]['message']['content']))
+        add_history("ai", response['choices'][0]['message']['content'])
+        msg.markdown(response['choices'][0]['message']['content'])
 
 def print_history():
     for i in range(len(st.session_state.ai)):
@@ -138,3 +130,15 @@ with st.sidebar:
     if clear_btn:
         st.session_state.history.clear()
         st.session_state.user.clear()
+        st.session_state.ai.clear()
+        print_history()
+
+    if save_btn and save_title:
+        save_chat_history(save_title)
+
+    selected_chat = st.selectbox("대화내용 불러오기", load_chat_history_list(), index=None)
+    load_btn = st.button("대화내용 불러오기", use_container_width=True)
+    if load_btn and selected_chat:
+        load_chat_history(selected_chat)
+
+print_history()
