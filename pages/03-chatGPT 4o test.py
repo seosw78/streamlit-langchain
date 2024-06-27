@@ -1,4 +1,5 @@
 import streamlit as st
+import openai
 from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.memory import ConversationBufferMemory
@@ -25,6 +26,8 @@ st.markdown(
     `{st.session_state.api_key[:-15] + '***************'}`
     """
 )
+
+openai.api_key = st.session_state.api_key
 
 if "history" not in st.session_state:
     st.session_state.history = []
@@ -169,8 +172,10 @@ if uploaded_file:
 
     if data_str:
         try:
-            response = llm.completion(
-                prompt=f"Analyze the following data:\n\n{data_str}"
+            response = openai.Completion.create(
+                engine="text-davinci-004",
+                prompt=f"Analyze the following data:\n\n{data_str}",
+                max_tokens=150
             )
             st.write("Analysis Result:")
             st.write(response.choices[0].text.strip())
