@@ -163,12 +163,14 @@ if uploaded_file:
     elif uploaded_file.name.endswith(('.png', '.jpg', '.jpeg')):
         img = Image.open(uploaded_file)
         st.image(img, caption='Uploaded Image', use_column_width=True)
-        data_str = "An image file has been uploaded."
+        data_str = "An image file has been uploaded. GPT-4 cannot process image content."
     else:
         data_str = "Unsupported file type."
 
     if data_str:
-        response = llm({"prompt": f"Analyze the following data:\n\n{data_str}"})
+        response = llm.generate(
+            prompt=f"Analyze the following data:\n\n{data_str}"
+        )
         st.write("Analysis Result:")
         st.write(response.choices[0].text.strip())
 
