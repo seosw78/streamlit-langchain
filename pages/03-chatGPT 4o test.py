@@ -14,7 +14,7 @@ import settings
 if "api_key" not in st.session_state:
     config = settings.load_config()
     if "api_key" in config:
-        st.session_state.api_key = settings.load_config()["api_key"]
+        st.session_state.api_key = config["api_key"]
     else:
         st.session_state.api_key = ""
 
@@ -54,12 +54,15 @@ class StreamCallback(BaseCallbackHandler):
         self.container.markdown(self.full_text)
 
 # ChatOpenAI 객체 생성
-llm = ChatOpenAI(
-    model="gpt-4o",
-    streaming=True,
-    callbacks=[StreamCallback(st.empty())],
-    api_key=st.session_state.api_key,
-)
+try:
+    llm = ChatOpenAI(
+        model="gpt-4",
+        streaming=True,
+        callbacks=[StreamCallback(st.empty())],
+        api_key=st.session_state.api_key,
+    )
+except Exception as e:
+    st.error(f"Error initializing ChatOpenAI: {e}")
 
 # ConversationChain 객체 생성
 conversation = ConversationChain(
@@ -91,7 +94,7 @@ if prompt_input:
     prompt_template = create_prompt_template(prompt_input)
     conversation.prompt = prompt_template
 
-model_input = tab2.selectbox("Model", ["gpt-3.5-turbo", "gpt-4o"], index=1)
+model_input = tab2.selectbox("Model", ["gpt-3.5-turbo", "gpt-4"], index=1)
 
 if model_input:
     settings.save_config({"model": model_input})
